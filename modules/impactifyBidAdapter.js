@@ -2,18 +2,20 @@ import {deepAccess, deepSetValue, generateUUID} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ajax} from '../src/ajax.js';
-
+import {getStorageManager} from '../src/storageManager.js'
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
-const ORIGIN = 'https://sonic.impactify.media';
+const ORIGIN = 'http://127.0.0.1:8000';
 const LOGGER_URI = 'https://logger.impactify.media';
 const AUCTIONURI = '/bidder';
+const IMPACTIFY_STORAGE_KEY = '_im_str';
 const COOKIESYNCURI = '/static/cookie_sync.html';
 const GVLID = 606;
 const GETCONFIG = config.getConfig;
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 const getDeviceType = () => {
   // OpenRTB Device type
@@ -36,6 +38,10 @@ const getFloor = (bid) => {
     return parseFloat(floorInfo.floor);
   }
   return null;
+}
+
+const getLocalStorage = () => {
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(IMPACTIFY_STORAGE_KEY) : '';
 }
 
 const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
@@ -171,11 +177,19 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
     let request = createOpenRtbRequest(validBidRequests, bidderRequest);
+    const imStr = getLocalStorage();
+
+    const options = {
+      customHeaders: {
+        'x-impact': imStr,
+      }
+    }
 
     return {
       method: 'POST',
       url: ORIGIN + AUCTIONURI,
       data: JSON.stringify(request),
+      options
     };
   },
 
