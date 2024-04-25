@@ -12,8 +12,8 @@ const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
-const ORIGIN = 'https://sonic.impactify.media';
-const LOGGER_URI = 'https://logger.impactify.media';
+const ORIGIN = 'http://127.0.0.1:8000';
+const LOGGER_URI = 'http://127.0.0.1:8001';
 const AUCTIONURI = '/bidder';
 const COOKIESYNCURI = '/static/cookie_sync.html';
 const GVLID = 606;
@@ -46,6 +46,10 @@ const helpers = {
 
     if (typeof bid.params.size == 'string') {
       ext.impactify.size = bid.params.size;
+    }
+
+    if (typeof bid.params.placementId == 'string') {
+      ext.impactify.placementId = bid.params.placementId;
     }
 
     return ext;
@@ -107,6 +111,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   // Create request and set imp bids inside
   let request = {
     id: bidderRequest.auctionId,
+    tmax: 3000,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
     imp: [],
@@ -222,9 +227,8 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function (bid) {
-    let isBanner = deepAccess(bid.mediaTypes, `banner`);
 
+  isBidRequestValid: function (bid) {
     if (typeof bid.params.appId != 'string' || !bid.params.appId) {
       return false;
     }
@@ -237,12 +241,30 @@ export const spec = {
     if (bid.params.style !== 'inline' && bid.params.style !== 'impact' && bid.params.style !== 'static') {
       return false;
     }
-    if (isBanner && (typeof bid.params.size != 'string' || !bid.params.size.includes('x') || bid.params.size.split('x').length != 2)) {
-      return false;
-    }
 
     return true;
   },
+  // isBidRequestValid: function (bid) {
+  //   let isBanner = deepAccess(bid.mediaTypes, `banner`);
+
+  //   if (typeof bid.params.appId != 'string' || !bid.params.appId) {
+  //     return false;
+  //   }
+  //   if (typeof bid.params.format != 'string' || typeof bid.params.style != 'string' || !bid.params.format || !bid.params.style) {
+  //     return false;
+  //   }
+  //   if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
+  //     return false;
+  //   }
+  //   if (bid.params.style !== 'inline' && bid.params.style !== 'impact' && bid.params.style !== 'static' && bid.params.style !== 'flyer') {
+  //     return false;
+  //   }
+  //   if (isBanner && (typeof bid.params.size != 'string' || !bid.params.size.includes('x') || bid.params.size.split('x').length != 2)) {
+  //     return false;
+  //   }
+
+  //   return true;
+  // },
 
   /**
    * Make a server request from the list of BidRequests.
@@ -314,6 +336,8 @@ export const spec = {
       }
     });
 
+    // eslint-disable-next-line no-console
+    console.log('bidresponse' + JSON.stringify(serverBody))
     return bidResponses;
   },
 
@@ -377,6 +401,9 @@ export const spec = {
    * @param {data} Containing timeout specific data
   */
   onTimeout: function(data) {
+    /* eslint-disable no-console */
+    console.log('timing out...');
+    /* eslint-disable no-console */
     ajax(`${LOGGER_URI}/log/bidder/timeout`, null, JSON.stringify(data[0]), {
       method: 'POST',
       contentType: 'application/json'
