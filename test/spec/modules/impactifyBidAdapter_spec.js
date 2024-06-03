@@ -208,8 +208,6 @@ describe('ImpactifyAdapter', function () {
       }
     });
 
-
-
     it('should return false when style is not a string', () => {
       const bid = utils.deepClone(validBids[0]);
 
@@ -276,6 +274,57 @@ describe('ImpactifyAdapter', function () {
       }
     };
 
+    let bannerBidRequests = [
+      {
+        bidder: 'impactify',
+        params: {
+          appId: '1',
+          format: 'screen',
+          style: 'inline'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [300, 250],
+            ]
+          }
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]],
+        bidId: '123456789',
+        bidderRequestId: '987654321',
+        auctionId: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
+        transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002',
+        userId: {
+          pubcid: '87a0327b-851c-4bb3-a925-0c7be94548f5'
+        },
+        userIdAsEids: [
+          {
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: '87a0327b-851c-4bb3-a925-0c7be94548f5',
+                atype: 1
+              }
+            ]
+          }
+        ]
+      }
+    ];
+    let bannerBidderRequest = {
+      bidderRequestId: '98845765110',
+      auctionId: '165410516454',
+      bidderCode: 'impactify',
+      bids: [
+        {
+          ...bannerBidRequests[0]
+        }
+      ],
+      refererInfo: {
+        referer: 'https://impactify.io'
+      }
+    };
+
     it('should pass bidfloor', function () {
       videoBidRequests[0].getFloor = function() {
         return {
@@ -316,6 +365,13 @@ describe('ImpactifyAdapter', function () {
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
       expect(request.options.customHeaders).to.be.undefined;
     });
+
+    it('should set the banner sizes properly', function () {
+      const request = spec.buildRequests(bannerBidRequests, bannerBidderRequest);
+      const resData = JSON.parse(request.data)
+      expect(resData.imp[0].banner.format[0].w).to.equal(300);
+      expect(resData.imp[0].banner.format[0].h).to.equal(250);
+    })
   });
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
