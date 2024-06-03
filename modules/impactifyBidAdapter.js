@@ -63,7 +63,7 @@ const helpers = {
   },
 
   createOrtbImpBannerObj(bid, size) {
-    let sizes = size.split('x');
+    let sizes = size[0];
 
     return {
       id: 'banner-' + bid.bidId,
@@ -190,9 +190,9 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
       }
     }
 
-    if (bannerObj && typeof imp.ext.impactify.size == 'string') {
+    if (bannerObj) {
       imp.banner = {
-        ...helpers.createOrtbImpBannerObj(bid, imp.ext.impactify.size)
+        ...helpers.createOrtbImpBannerObj(bid, bannerObj.sizes)
       }
     }
 
@@ -227,8 +227,6 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    let isBanner = deepAccess(bid.mediaTypes, `banner`);
-
     if (typeof bid.params.appId != 'string' || !bid.params.appId) {
       return false;
     }
@@ -236,9 +234,6 @@ export const spec = {
       return false;
     }
     if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
-      return false;
-    }
-    if (isBanner && (typeof bid.params.size != 'string' || !bid.params.size.includes('x') || bid.params.size.split('x').length != 2)) {
       return false;
     }
 
